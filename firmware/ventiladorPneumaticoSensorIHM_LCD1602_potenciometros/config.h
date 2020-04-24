@@ -14,15 +14,17 @@
 #define POWER_ON LOW
 #define TEMPO_STATUS 3000
 
-#if defined(ARDUINO_AVR_UNO) //Arduino Uno
+#if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_NANO) //Arduino Uno e Nano
   #define PORTA_POT1 A0
   #define PORTA_POT2 A1
   #define PORTA_POT3 A2
   #define PORTA_POT4 A3
-  #define PORTA_POT5 A4
-  #define PORTA_POT6 A5
+  #define PORTA_POT5 A6
+  #define PORTA_POT6 A7
   #define PINO_POWER  7
   #define PINO_STATUS 8
+  #define PINO_VALVULA_EXPIRACAO   9
+  #define PINO_VALVULA_INSPIRACAO 10  
 #elif defined(ARDUINO_AVR_LEONARDO) || defined(ARDUINO_AVR_MICRO) //Arduino Leonardo ou Arduino ProMicro
   #define PORTA_POT1 A0
   #define PORTA_POT2 A1
