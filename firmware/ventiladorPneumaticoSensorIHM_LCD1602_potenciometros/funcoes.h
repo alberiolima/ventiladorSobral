@@ -47,3 +47,11 @@ String formatTime( uint32_t t) {
 
   return (st);
 }
+
+String intToStrSpace( int valor, uint8_t len ) {
+  String retorno = String(valor);
+  while (retorno.length()< len){
+    retorno = " " + retorno;
+  }
+  return retorno;
+}

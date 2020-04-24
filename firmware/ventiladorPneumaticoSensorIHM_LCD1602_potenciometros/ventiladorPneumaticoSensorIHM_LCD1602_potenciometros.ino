@@ -22,35 +22,36 @@
 
 /* Variáveis de controle dos parâmetros */
 const uint8_t portasPotenciometro[quantidadePotenciometros] = {PORTA_POT1,PORTA_POT2,PORTA_POT3,PORTA_POT4,PORTA_POT5,PORTA_POT6};
-int16_t valorPotenciometro[quantidadePotenciometros];
-int16_t valorParametro[quantidadePotenciometros];
-int16_t valorIncremento[quantidadePotenciometros];
-int16_t valorMAX[quantidadePotenciometros];
-int16_t valorMIN[quantidadePotenciometros];
-String titulo[quantidadePotenciometros];
-String unidades[quantidadePotenciometros];
+int16_t valorParametro[quantidadePotenciometros];     //Valor do parâmetro, esse valor que será usado na operação
+int16_t valorPotenciometro[quantidadePotenciometros]; //Valor raw lido da porta analógica
+int16_t valorIncremento[quantidadePotenciometros];    //Incremento/decremento do valor
+int16_t valorMAX[quantidadePotenciometros];           //Valor máximo do parâmetro
+int16_t valorMIN[quantidadePotenciometros];           //Valor mínimo do parâmetro
+String titulo[quantidadePotenciometros];              //Titulo do parâmetro
+String unidades[quantidadePotenciometros];            //Unidade de medida do parâmetro
 
-/* Parâmetros da respiração */
+/* Parâmetros da respiração, IHM envia para [operação] */
 parametros_t parametrosRespiracao;
 
-/* Status */ 
+/* Status, que o IHM recebe da [operação] */ 
 status_t statusIHM;
 
 /* volume em ml*/
 uint32_t volumeAtual = 0;
 
-/* pressão em mmH2O */
+/* pressão em mmH2O, usando mmH2O para não ter valores fracionados nos calculos, ex: 25mmH2O = 2.5cmH2O */
 int32_t pressaoAtual = 0;
 
-uint8_t statusPower = !POWER_ON;  //Status de operação
-uint32_t tempoInicioOperacao = 0; //Conta o tempo de execução da operação
+uint8_t statusPower = !POWER_ON;  //Status de operação, indica posição da chave que inicia/para operação
+uint32_t tempoInicioOperacao = 0; //Para contar o tempo duração operação,
 uint32_t proximoPiscaLCD = 0;     //Controla o pisca do LCD quando em alarme
 boolean zoomHabilitado = true;    //Habilita efeito de mostrar um parâmetro por vez quando o poteciômetro é acionado
 
 /* funções locais */
-void telaParametros( boolean limpar = false );
-void MostraTelaStatus( boolean force = false );
-void lePotenciometros(boolean = false);
+void telaParametros( boolean limpar = false );  //Tela com todos os parâmetros
+void telaParametro( uint8_t p );                //Tela com um unico parâmetro em zoom
+void MostraTelaStatus( boolean force = false ); //Status rotativo quando em operação
+void lePotenciometros(boolean force = false);   //faz leitura dos potenciômetros
 
 void setup() {
   
@@ -63,7 +64,7 @@ void setup() {
   /* Inicia porta de debug */
   #if defined(debbug_on)
     Serial.begin( debbug_baud );
-    delay(300);
+    delay(300); //Tempo necessário para atmega32u4 iniciar serial
     Serial.println(F("Iniciado"));
   #endif  
 
@@ -244,14 +245,6 @@ void telaParametros( boolean limpar ){
   lcd.setCursor(14, 1); lcd.print(intToStrSpace(valorParametro[potPEEP],2));    
 }
 
-String intToStrSpace( int v, uint8_t len ) {
-  String r = String(v);
-  while (r.length()< len){
-    r = " " + r;
-  }
-  return r;
-}
-
 /* Inicia variáveis de controle dos potenciômetros, MAX,MIN e Incremento */
 void iniviaValores() {
 
@@ -316,10 +309,10 @@ void MostraTelaStatus( boolean force ){
   if ( statusAtual == 0 ) {
     uint32_t tempoDecorrido = (millis() - tempoInicioOperacao)/(uint32_t)1000;
     lcd.setCursor( 0, 1);
-    lcd.print( formatTime(tempoDecorrido));
+    lcd.print(formatTime(tempoDecorrido));
     if ( tempoDecorrido >= (uint32_t)86400 ) {
       tempoDecorrido = tempoDecorrido / (uint32_t)86400;
-      lcd.print( " dias:");
+      lcd.print( F(" dias:") );
       lcd.print( tempoDecorrido );
     }    
   } else if (statusAtual == 1) {
@@ -340,34 +333,35 @@ void MostraTelaStatus( boolean force ){
   proximoStatus = millis() + (uint32_t)TEMPO_STATUS;
   
   lcd.clear();
+  String linha1LCD = "";
+  String linha2LCD = "";
   if ( statusAtual == telaStatusTempo) {
-    lcd.setCursor( 0, 0);
-    lcd.print(F("Tempo Decorrido"));
+    /* Tela que mostra tempo decorrido da operação */
+    linha1LCD = F("Tempo Decorrido");
   } else if ( statusAtual == telaStatusPressaoInspiracao){
-    lcd.setCursor( 0, 0);
-    lcd.print(F("Pressao Inps"));
-    lcd.setCursor( 0, 1);
-    lcd.print(statusIHM.pressaoInspiracao/10.0);
+    /* Tela que mostra a pressão final da última inspiração */
+    linha1LCD = F("Pressao Inps");
+    linha2LCD = String(statusIHM.pressaoInspiracao / 10.0);
   } else if ( statusAtual == telaStatusVolumeInspiracao){
-    lcd.setCursor( 0, 0);
-    lcd.print(F("Volume Inspracao"));
-    lcd.setCursor( 0, 1);
-    lcd.print(statusIHM.volumeInspiracao);    
+    /* Tela que mostra o volume final da última inspiração */
+    linha1LCD = F("Volume Inspracao");
+    linha2LCD = String(statusIHM.volumeInspiracao);    
   } else if ( statusAtual == telaStatusVolumeExpiracao){
-    lcd.setCursor( 0, 0);
-    lcd.print(F("Volume Expiracao"));
-    lcd.setCursor( 0, 1);
-    lcd.print(statusIHM.volumeExpiracao);
+    /* Tela que mostra o volume final da última expiração */
+    linha1LCD = F("Volume Expiracao");
+    linha2LCD = String(statusIHM.volumeExpiracao);
   } else if ( statusAtual == telaStatusParametros ){
+    /* Tela com todos os parâmetros de configuração */
     telaParametros();
+    return;
   } else if ( statusAtual == telaStatusIE ) {
-    lcd.setCursor( 0, 0);
-    lcd.print(F("Tempo Insp/Exp"));
-    lcd.setCursor( 0, 1);
-    lcd.print(statusIHM.tempoInspiracao/1000.0);
-    lcd.print(F(" "));
-    lcd.print(statusIHM.tempoExpiracao/1000.0);
+    /* Tela que mostra tempos de inspiração e expiração da última respiração */
+    linha1LCD = F("Tempo Insp/Exp");
+    linha2LCD = String(statusIHM.tempoInspiracao/1000.0) + " " +String(statusIHM.tempoExpiracao/1000.0);
   }
+  /* Escreve dados o LCD */
+  lcd.setCursor( 0, 0); lcd.print(linha1LCD);
+  lcd.setCursor( 0, 1); lcd.print(linha2LCD);
 }
 
 void iniciaIOs(){
@@ -439,8 +433,9 @@ void respira(){
   /* Expiração */
   volumeAtual = 0;
   abreValvulaExpiracao(); // Abre valvula da expiração
-  uint32_t finalExpiracao = millis() + parametrosRespiracao.tempoExpiracao;  
-  while (( millis() < finalExpiracao ) 
+  tempoAtual = millis();
+  uint32_t finalExpiracao = tempoAtual + parametrosRespiracao.tempoExpiracao;  
+  while (( tempoAtual < finalExpiracao ) 
   #ifdef CONTROLE_PEEP 
     &&(pressaoAtual > parametrosRespiracao.pressaoPEEP )
   #endif
@@ -453,7 +448,7 @@ void respira(){
   statusIHM.volumeExpiracao = volumeAtual;
   statusIHM.pressaoPEEP = pressaoAtual;
   //wdt_reset();
-  while ( millis() < finalExpiracao ){ //Aguarda concluir tempo de expiração
+  while ( tempoAtual < finalExpiracao ){ //Aguarda concluir tempo de expiração
     atualizaDadosSensores();
     tempoAtual = millis();
   }

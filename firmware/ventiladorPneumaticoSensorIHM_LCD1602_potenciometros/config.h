@@ -43,8 +43,10 @@
   #define PORTA_POT4 PA3
   #define PORTA_POT5 PA4
   #define PORTA_POT6 PA5
+  #define PINO_VALVULA_EXPIRACAO   9
+  #define PINO_VALVULA_INSPIRACAO 10    
 #else
-  #error Plataforma não definida  
+  #error Plataforma nao definida  
 #endif
 
 #ifdef PINO_VALVULA_INSPIRACAO
