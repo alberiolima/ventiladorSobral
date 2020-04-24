@@ -10,6 +10,15 @@
  *  > PEEP 0-5cmH2O
  *  > Trigger (gatilho) [0 a 5]cmH2O 
  *  * o calculo de tempo de inspiração e expiração é calculado com base na frequencia e relação I:E
+ *  
+ *  Eletrônica:
+ *  Arduino promicro ou micro
+ *  6 potenciômetros, mas portas A0, A1, A2, A3, A6 e A7
+ *  Chave ON/OFF na porta D7 (ativa em LOW) 
+ *  Botão status na porta D8 (ativa em LOW)
+ *  Relé para valvula de expiração na porta D9 (ativo em LOW)
+ *  Relé para valvula de inspiração da porta D10 (ativo em LOW)
+ *  LCD1602 I2C portas SDA=D2 e SCL=D3
  */
 //#include <avr/wdt.h> //Biblioteca que cão de guarda (WDT)
 #include "config.h"
