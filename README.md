@@ -1,4 +1,4 @@
-# ventiladorIFCE
+# ventiladorSobral
 Ventilador pneumático
 
 Repositório do projeto de construção de um ventilador pulmonar pneumático
